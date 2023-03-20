@@ -1,12 +1,19 @@
 'use strict';
 const express = require('express')
+const cors=require('cors');
 const app = express()
+app.use(cors());
 const port = 3000
-const data=require("./Movie Data/data.json")
-app.get('/movieApp',myMovieApp);
+const movieData=require("./Movie Data/data.json")
+app.get('/',myMovieApp);
+app.get('/favorite',myFirstMovie);
+app.get('*',handlePageNotFoundError);
+app.get('*',handleServerError);
+
+
 function myMovieApp(req, res) {
   
-  let newConst=new Constmovie(data.title,data.poster_path,data.overview);
+  let newConst=new Constmovie(movieData.title,movieData.poster_path,movieData.overview);
   res.json(newConst);
 }
 
@@ -19,28 +26,25 @@ this.overview=overview;
 
 
 
-app.get('/favorite',myFirstMovie);
 function myFirstMovie(req,res){
     res.send("Welcome to Favorite Page");
 }
+
+
 app.listen(port, () => {
   console.log(`Movie app listening on port ${port}`)
 })
 
+
+
 function handlePageNotFoundError() {
-    const response = {
-      status: 404,
-      responseText: "Sorry, the page you requested could not be found"
-    };
-    // do something with the response, such as display an error message to the user
-    console.log(response);
+    res.status(404).send("NOT FOUND");
   }
 
+
+
+
   function handleServerError() {
-    const response = {
-      status: 500,
-      responseText: "Sorry, something went wrong"
-    };
-    // do something with the response, such as display an error message to the user
-    console.log(response);
+    res.status(500).send ("Sorry, something went wrong");
+    
   }
