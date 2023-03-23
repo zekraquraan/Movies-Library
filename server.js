@@ -11,7 +11,8 @@ app.get('/favorite',myFirstMovie);
 app.get('/trending',trendingHandler);
 app.get('/search',searchHandler);
 app.get('*',handlePageNotFoundError);
-//app.get('*',handleServerError);
+const PORT=process.env.PORT;
+const api_key=process.env.API_Key;
 
 
 function myMovieApp(req, res) {
@@ -75,22 +76,61 @@ else if(trending.name){
     this.poster_path=poster_path;
     this.overview=overview;
   }
-  //function handleServerError() {
-   // res.status(500).send ("Sorry, something went wrong");
+  app.use (function handleServerError(err,req,res,next) {
+    console.error(err.stack);
+    res.status(500).send ({
+      status:500,
+   responseText: 'Sorry, something went wrong'
     
- // }
+  });
+});
  function searchHandler(req,res){
-let url=`https://api.themoviedb.org/3/search/movie?api_key=668baa4bb128a32b82fe0c15b21dd699&language=en-US&query=The&page=2`
+let url=`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&language=en-US&query=${clientRequest}&page=2`
  axios.get(url)
  .then((result)=>{
   
-  console.log(result.data.result)
-  let dataTrend=result.data.results.map((trending)=>{
- return new Trend(trending.name)
+  //console.log(result.data.result)
+  let requestMo=result.data.results.map((movies)=>{
+ return new Trend(movies.title,movies.poster_path,movies.overview)
  })
- res.json(dataTrend);
+ res.json(requestMo)
 })
-.catch((err){
+.catch((err)=>{
   console.log(err)
 })
 }
+
+
+
+function popularHandler(req,res)
+{
+  let url=`/discover/movie?sort_by=popularity.desc?api_key=${apiKey}`
+  axios.get(url)
+  .then((result)=>{
+    let popH=result.data.results.map((movies)=>{
+      return new Trend(movies.title,movies.poster_path,movies.overview)
+    })
+    res.json(popH)
+    })
+    .catch((err)=>{
+      console.log(err)
+    })
+  }
+
+
+
+  
+function highestRated(req,res)
+{
+  let url=`/discover/movie/?certification_country=US&certification=R&sort_by=vote_average.desc?api_key=${apiKey}`
+  axios.get(url)
+  .then((result)=>{
+    let highR=result.data.results.map((movies)=>{
+      return new Trend(movies.title,movies.poster_path,movies.overview)
+    })
+    res.json(highR)
+    })
+    .catch((err)=>{
+      console.log(err)
+    })
+  }

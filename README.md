@@ -4,7 +4,7 @@
 **Author Name**: zekra quraan
 
 ## WRRC
-![alt](./Untitled%20(11).jpg.jpg)
+![alt](./Untitled%20(11).jpg)
 
 ## Overview
 /*I will build the server and the database for my project.*/
