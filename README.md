@@ -9,7 +9,7 @@
 ## Overview
 /*I will build the server and the database for my project.*/
 ## Getting Started
-<!-- 1.npm init -y  
+ 1.npm init -y  
 2. npm install express
 3. create anew branch clled lab11
 4.create basic file (server.js , .gitignore)
@@ -25,7 +25,8 @@
 12.Create GET request to the 3rd party 
 13./trending: Get the trending movies data from the Movie DB API
 14./search: Search for a movie name to get its information
-
+15.create ./popularHandler for popular movies
+16.create ./highestRated function for movies that have the highest rated
 
 ## Project Features
-<!-- Create a function to handle "page not found error" (status 404)
+ Create a function to handle "page not found error" (status 404)
