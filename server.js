@@ -6,13 +6,51 @@ const axios=require('axios');
 app.use(cors());
 const port = 3000;
 const movieData=require("./Movie Data/data.json")
+const bodyParser=require('body-parser');
+app.use(bodyParser.urlencoded({extended:false}));
+app.use(bodyParser.json())
 app.get('/',myMovieApp);
 app.get('/favorite',myFirstMovie);
 app.get('/trending',trendingHandler);
 app.get('/search',searchHandler);
+app.post('/addMovie',addMovieHandler);
 app.get('*',handlePageNotFoundError);
+
 const PORT=process.env.PORT;
 const api_key=process.env.API_Key;
+
+client.connect().then(()=>{
+  app.listen(port, () => {
+      console.log(`Example app listening on port ${port}`)})
+}).catch()
+
+
+
+function addMovieHandler(req,res){
+      
+let{title,release_date,poster_path,overview}=req.body;
+
+let sql=`INSERT INTO movie(title,release_date,poster_path,overview)
+ VALUES ($1,$2,$3,$4);`
+let values=[title,release_date,poster_path,overview]
+client.query(sql,values).then(
+    res.status(201).send("data successfully saved in db to server")
+).catch()
+
+ 
+}
+
+function getMoviesHandeler(req,res){
+  let sql=`SELECT * FROM movie;`
+  client.query(sql).then((result)=>{
+      console.log(result);
+      res.json(result.rows)
+  })
+}
+
+
+
+
 
 
 function myMovieApp(req, res) {
