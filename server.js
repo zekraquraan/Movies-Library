@@ -7,6 +7,8 @@ app.use(cors());
 const port = 3000;
 const movieData=require("./Movie Data/data.json")
 const bodyParser=require('body-parser');
+
+
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json())
 app.get('/',myMovieApp);
@@ -15,6 +17,9 @@ app.get('/trending',trendingHandler);
 app.get('/search',searchHandler);
 app.post('/addMovie',addMovieHandler);
 app.get('*',handlePageNotFoundError);
+app.put('/updateMovie/:comments',handlerUpdate);
+app.delete('/deleteMovie/:movieId',handleDelete)
+app.get('getMovie/:idMovie',getMovie);
 
 const PORT=process.env.PORT;
 const api_key=process.env.API_Key;
@@ -40,6 +45,17 @@ client.query(sql,values).then(
  
 }
 
+function getMovie(req,res){
+  let sql=`SELECT * FROM movie WHERE id=$1;`
+  client.query(sql).then((result)=>{
+      console.log(result);
+      res.json(result.rows)
+  })
+}
+
+
+
+
 function getMoviesHandeler(req,res){
   let sql=`SELECT * FROM movie;`
   client.query(sql).then((result)=>{
@@ -48,7 +64,19 @@ function getMoviesHandeler(req,res){
   })
 }
 
-
+function handlerUpdate(req,res){
+  console.log(req.params)
+  let movieName=req.params.comments
+  let{title,release_date,poster_path,overview,comments}=req.body;
+  let sql=`UPDATE movie
+  SET title = $1, release_date= $2, poster_path=$3,overview=$4,comments=$5
+  WHERE id=$6;`;
+  let values=[title,release_date,poster_path,overview,comments,movieName];
+  client.query(sql,values).then(result=>{
+    console.log(result);
+    res.send("Updated")
+  }).catch();
+}
 
 
 
@@ -66,7 +94,14 @@ this.poster_path=poster_path;
 this.overview=overview;
 }
 
-
+function handleDelete(req,res){
+let {movieId}=req.params;
+let sql=`DELETE FROM movie WHERE id=$1;`;
+let value=[movieId];
+client.query(sql,value).then(result=>{
+  res.status(204).send("deleted");
+}).catch()
+}
 
 function myFirstMovie(req,res){
     res.send("Welcome to Favorite Page");

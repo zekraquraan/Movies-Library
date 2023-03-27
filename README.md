@@ -6,6 +6,7 @@
 ## WRRC
 ![alt](./Untitled%20(11).jpg)
 ![alt](./IMG_20230325_231807.jpg)
+![alt](./lab14.jpg)
 ## Overview
 /*I will build the server and the database for my project.*/
 ## Getting Started
@@ -43,6 +44,11 @@
 
 addMovie : create a post request to save a specific movie to database along with my personal comments.
 /getMovies: Create a get request to get all the data from the database
+
+//lab 14
+21./UPDATE/id: create an update request to update my  comments for a specific movie in the database.
+22./DELETE/id : create a delete request to remove a specific movie from my database.
+23.getMovie/id: Create a get request to get a specific movie from the database
 
 
 ## Project Features
