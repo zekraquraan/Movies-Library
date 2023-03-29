@@ -3,10 +3,18 @@ const express = require('express')
 const cors=require('cors');
 const app = express()
 const axios=require('axios');
+require('dotenv').config();
 app.use(cors());
 const port = 3000;
 const movieData=require("./Movie Data/data.json")
+const PORT=process.env.PORT;
+const api_key=process.env.API_Key;
 const bodyParser=require('body-parser');
+const { Client } = require('pg')
+const userName = process.env.USERNAME;
+const passWord = process.env.PASSWORD;
+let url = `postgres://${userName}:${passWord}@localhost:5432/movie`;
+const client = new Client(url)
 
 
 app.use(bodyParser.urlencoded({extended:false}));
@@ -17,17 +25,10 @@ app.get('/trending',trendingHandler);
 app.get('/search',searchHandler);
 app.post('/addMovie',addMovieHandler);
 app.get('*',handlePageNotFoundError);
-app.put('/updateMovie/:comments',handlerUpdate);
-app.delete('/deleteMovie/:movieId',handleDelete)
-app.get('getMovie/:idMovie',getMovie);
-
-const PORT=process.env.PORT;
-const api_key=process.env.API_Key;
-
-client.connect().then(()=>{
-  app.listen(port, () => {
-      console.log(`Example app listening on port ${port}`)})
-}).catch()
+app.use(errorHandler);
+app.put('/update/:id',updateMovieHandler);
+app.delete('/delete/:id',deleteMovieHandler)
+app.get('getMovie/:id',getSpecificMovie);
 
 
 
@@ -50,34 +51,41 @@ function getMovie(req,res){
   client.query(sql).then((result)=>{
       console.log(result);
       res.json(result.rows)
-  })
+    })
+  .catch((err)=>{
+    errorHandler(err,req,res)
+})
+
 }
 
 
 
 
-function getMoviesHandeler(req,res){
-  let sql=`SELECT * FROM movie;`
-  client.query(sql).then((result)=>{
-      console.log(result);
+function getSpecificMovie(req,res){
+  let movieId=req.params.id;
+  let value=[movieId];
+  let sql=`SELECT *
+  FROM movie WHERE id=$1;`
+  client.query(sql,value).then((result)=>{
+      // console.log(result);
       res.json(result.rows)
   })
-}
 
-function handlerUpdate(req,res){
-  console.log(req.params)
-  let movieName=req.params.comments
-  let{title,release_date,poster_path,overview,comments}=req.body;
-  let sql=`UPDATE movie
-  SET title = $1, release_date= $2, poster_path=$3,overview=$4,comments=$5
-  WHERE id=$6;`;
-  let values=[title,release_date,poster_path,overview,comments,movieName];
-  client.query(sql,values).then(result=>{
-    console.log(result);
-    res.send("Updated")
-  }).catch();
 }
+function updateMovieHandler(req,res){
 
+
+  // console.log(req.params);
+  let movieId=req.params.id;
+  let {title,release_date,poster_path,overview,comment} = req.body;
+  let id=req.params.id;
+ 
+  let sql=`UPDATE movie SET title=$1 , release_date=$2 ,poster_path=$3,overview=$4,comment=$5 WHERE id=$2 RETURNING *;`;
+  let values = [title,release_date,poster_path,overview,comment];
+  client.query(sql,values).then((result)=>{
+    console.log(result.rows);
+    res.send("updated")}).catch()
+}
 
 
 
@@ -94,39 +102,42 @@ this.poster_path=poster_path;
 this.overview=overview;
 }
 
-function handleDelete(req,res){
-let {movieId}=req.params;
-let sql=`DELETE FROM movie WHERE id=$1;`;
-let value=[movieId];
-client.query(sql,value).then(result=>{
-  res.status(204).send("deleted");
-}).catch()
-}
-
-function myFirstMovie(req,res){
+function deleteMovieHandler(req,res){
+  let {id}=req.params;
+  let sql=`DELETE FROM movie WHERE id=$1;`
+  let value=[id];
+  client.query(sql,value).then(result=>{
+      console.log(result);
+      res.status(204).send("deleted");
+      
+    })
+    .catch();
+  }
+  
+  function myFirstMovie(req,res){
     res.send("Welcome to Favorite Page");
-}
-
-
-app.listen(port, () => {
-  console.log(`Movie app listening on port ${port}`)
-})
-
-
-
-function handlePageNotFoundError() {
+  }
+  
+  
+  app.listen(port, () => {
+    console.log(`Movie app listening on port ${port}`)
+  })
+  
+  
+  
+  function handlePageNotFoundError() {
     res.status(404).send("NOT FOUND");
     
   }
-
-
-function trendingHandler(req,res){
-let url=`https://api.themoviedb.org/3/trending/all/week?api_key=a6787f488adbc7363fab6b930e3aece3&language=en-US`
-  axios.get(url)
-  .then((result)=>{
+  
+  
+  function trendingHandler(req,res){
+    let url=`https://api.themoviedb.org/3/trending/all/week?api_key=a6787f488adbc7363fab6b930e3aece3&language=en-US`
+    axios.get(url)
+    .then((result)=>{
     
-    console.log(result.data.result)
-let dataTrend=result.data.results.map((trending)=>
+      console.log(result.data.result)
+      let dataTrend=result.data.results.map((trending)=>
 { if(trending.title){
   return new Trend(trending.id,trending.title,trending.release_date,trending.poster_path,trending.overview)
 }
@@ -134,29 +145,27 @@ else if(trending.name){
   return new Trend(trending.id,trending.name,trending.release_date,trending.poster_path,trending.overview) 
 }
 })
-  
-  res.json(dataTrend);
-  })
-  .catch((err)=>{
-    console.log(err)
+
+res.json(dataTrend);
+})
+.catch((err)=>{
+  console.log(err)
   })
 
 }
-  function Trend(id,title,releasedate,poster_path,overview){
+function Trend(id,title,releasedate,poster_path,overview){
     this.id=id;
     this.title=title;
     this.release_date=releasedate;
     this.poster_path=poster_path;
     this.overview=overview;
   }
-  app.use (function handleServerError(err,req,res,next) {
-    console.error(err.stack);
-    res.status(500).send ({
-      status:500,
-   responseText: 'Sorry, something went wrong'
-    
-  });
-});
+ 
+function errorHandler(error,req,res){
+   
+  res.status(500).send(error)
+}
+
  function searchHandler(req,res){
 let url=`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&language=en-US&query=${clientRequest}&page=2`
  axios.get(url)
@@ -164,8 +173,8 @@ let url=`https://api.themoviedb.org/3/search/movie?api_key=${apiKey}&language=en
   
   //console.log(result.data.result)
   let requestMo=result.data.results.map((movies)=>{
- return new Trend(movies.title,movies.poster_path,movies.overview)
- })
+    return new Trend(movies.title,movies.poster_path,movies.overview)
+  })
  res.json(requestMo)
 })
 .catch((err)=>{
@@ -184,8 +193,8 @@ function popularHandler(req,res)
       return new Trend(movies.title,movies.poster_path,movies.overview)
     })
     res.json(popH)
-    })
-    .catch((err)=>{
+  })
+  .catch((err)=>{
       console.log(err)
     })
   }
@@ -202,8 +211,14 @@ function highestRated(req,res)
       return new Trend(movies.title,movies.poster_path,movies.overview)
     })
     res.json(highR)
-    })
+  })
     .catch((err)=>{
       console.log(err)
     })
+    
+    client.connect().then(()=>{
+      app.listen(port, () => {
+          console.log(`Example app listening on port ${port}`)})
+    }).catch()
+    
   }
